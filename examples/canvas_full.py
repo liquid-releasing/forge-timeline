@@ -41,13 +41,18 @@ def main() -> int:
     window.setCentralWidget(central)
     window.resize(1280, 480)
 
-    position = {"ms": 0}
     step_ms = 100
 
     def advance() -> None:
-        position["ms"] = (position["ms"] + step_ms) % duration_ms
-        timeline.set_position(position["ms"])
-        time_label.set_ms(position["ms"])
+        next_ms = (timeline.position_ms + step_ms) % duration_ms
+        timeline.set_position(next_ms)
+        time_label.set_ms(next_ms)
+
+    def on_click(ms: int) -> None:
+        time_label.set_ms(ms)
+
+    timeline.position_clicked.connect(on_click)
+    timeline.position_dragged.connect(on_click)
 
     timer = QTimer()
     timer.timeout.connect(advance)

@@ -7,8 +7,8 @@ from __future__ import annotations
 
 from typing import Literal
 
-from PySide6.QtCore import Signal
-from PySide6.QtGui import QPainter, QPaintEvent, QPen
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QMouseEvent, QPainter, QPaintEvent, QPen
 from PySide6.QtWidgets import QWidget
 
 from forge_timeline.theme import DEFAULT_THEME, Theme
@@ -95,6 +95,31 @@ class TimelineWidget(QWidget):
 
     def mark_built(self, start_ms: int, end_ms: int) -> None:
         raise NotImplementedError
+
+    def _x_to_ms(self, x: float) -> int:
+        width = self.width()
+        if width <= 0:
+            return 0
+        fraction = max(0.0, min(1.0, x / width))
+        return int(fraction * self._duration_ms)
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
+            ms = self._x_to_ms(event.position().x())
+            self.set_position(ms)
+            self.position_clicked.emit(ms)
+            event.accept()
+            return
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        if event.buttons() & Qt.MouseButton.LeftButton:
+            ms = self._x_to_ms(event.position().x())
+            self.set_position(ms)
+            self.position_dragged.emit(ms)
+            event.accept()
+            return
+        super().mouseMoveEvent(event)
 
     def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
