@@ -18,9 +18,11 @@ Runtime requirements:
 
 from __future__ import annotations
 
+import struct
+import subprocess
 import sys
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QThread, QTimer, Signal
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QApplication,
@@ -36,6 +38,67 @@ from forge_timeline import (
     TimelineWidget,
     VideoPanel,
 )
+
+
+def _ffmpeg_exe() -> str:
+    """Resolve a usable ffmpeg binary. Prefer imageio-ffmpeg's bundled one; fall back to PATH."""
+    try:
+        import imageio_ffmpeg
+
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:
+        return "ffmpeg"
+
+
+def extract_audio_peaks(
+    video_path: str,
+    sample_rate: int = 200,
+    target_buckets: int = 2000,
+) -> list[float]:
+    """Extract a list of mono audio peak amplitudes [0, 1] across the file's duration."""
+    cmd = [
+        _ffmpeg_exe(),
+        "-loglevel", "error",
+        "-i", str(video_path),
+        "-ac", "1",
+        "-ar", str(sample_rate),
+        "-f", "s16le",
+        "pipe:1",
+    ]
+    result = subprocess.run(cmd, capture_output=True, check=True)
+    raw = result.stdout
+    sample_count = len(raw) // 2
+    if sample_count == 0:
+        return []
+    samples = struct.unpack(f"<{sample_count}h", raw)
+    if sample_count <= target_buckets:
+        return [abs(s) / 32768.0 for s in samples]
+    bucket_size = sample_count / target_buckets
+    peaks: list[float] = []
+    for i in range(target_buckets):
+        start = int(i * bucket_size)
+        end = int((i + 1) * bucket_size)
+        if end > start:
+            peaks.append(max(abs(s) for s in samples[start:end]) / 32768.0)
+        else:
+            peaks.append(0.0)
+    return peaks
+
+
+class PeakExtractor(QThread):
+    finished_with_peaks = Signal(list)
+
+    def __init__(self, video_path: str, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._video_path = video_path
+
+    def run(self) -> None:
+        try:
+            peaks = extract_audio_peaks(self._video_path)
+        except Exception as e:
+            print(f"[video_demo] peak extraction failed: {e}", file=sys.stderr)
+            peaks = []
+        self.finished_with_peaks.emit(peaks)
 
 
 def main() -> int:
@@ -75,10 +138,18 @@ def main() -> int:
         lambda: video.play() if video.is_paused() else video.pause()
     )
 
+    extractor: PeakExtractor | None = None
+
     def load_path(path: str) -> None:
+        nonlocal extractor
         window.setWindowTitle(f"forge-timeline video demo — {path}")
         video.load(path)
         video.play()
+        extractor = PeakExtractor(path, parent=window)
+        extractor.finished_with_peaks.connect(
+            lambda peaks: timeline.set_data(waveform=peaks)
+        )
+        extractor.start()
 
     if len(sys.argv) > 1:
         cli_path = sys.argv[1]

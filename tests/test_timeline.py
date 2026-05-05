@@ -131,6 +131,55 @@ def test_set_duration_zero_rejected(qtbot) -> None:
         widget.set_duration(0)
 
 
+def test_set_data_waveform_stores_peaks(qtbot) -> None:
+    from forge_timeline import TimelineWidget
+
+    widget = TimelineWidget(duration_ms=60_000)
+    qtbot.addWidget(widget)
+
+    peaks = [0.1, 0.5, 0.9, 0.3]
+    widget.set_data(waveform=peaks)
+
+    assert widget._waveform_peaks == peaks
+
+
+def test_set_data_waveform_replaces_previous(qtbot) -> None:
+    from forge_timeline import TimelineWidget
+
+    widget = TimelineWidget(duration_ms=60_000)
+    qtbot.addWidget(widget)
+
+    widget.set_data(waveform=[0.1, 0.2, 0.3])
+    widget.set_data(waveform=[0.9])
+
+    assert widget._waveform_peaks == [0.9]
+
+
+def test_set_data_unsupported_kwargs_raise(qtbot) -> None:
+    from forge_timeline import TimelineWidget
+
+    widget = TimelineWidget(duration_ms=60_000)
+    qtbot.addWidget(widget)
+
+    with pytest.raises(NotImplementedError):
+        widget.set_data(chapters=[{"start_ms": 0, "end_ms": 1000, "name": "x"}])
+
+
+def test_paints_with_waveform_without_crashing(qtbot) -> None:
+    import math
+
+    from forge_timeline import TimelineWidget
+
+    widget = TimelineWidget(duration_ms=600_000)
+    qtbot.addWidget(widget)
+    widget.resize(800, 100)
+    widget.set_data(waveform=[abs(math.sin(i / 10)) for i in range(400)])
+    widget.set_position(123_456)
+
+    widget.show()
+    qtbot.waitExposed(widget)
+
+
 def test_left_click_emits_and_updates_position(qtbot) -> None:
     """Left-click anywhere fires position_clicked and updates position_ms in lockstep.
 

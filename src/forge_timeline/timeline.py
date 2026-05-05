@@ -51,6 +51,7 @@ class TimelineWidget(QWidget):
         self._mode: Mode = mode
         self._position_ms = 0
         self._theme = theme or DEFAULT_THEME
+        self._waveform_peaks: list[float] = []
         self.setMinimumHeight(64)
 
     @property
@@ -97,8 +98,16 @@ class TimelineWidget(QWidget):
         phrases: list[dict] | None = None,
         curve: list[tuple[int, int]] | None = None,
         thumbnails: list[dict] | None = None,
+        waveform: list[float] | None = None,
     ) -> None:
-        raise NotImplementedError
+        if any(x is not None for x in (chapters, phrases, curve, thumbnails)):
+            raise NotImplementedError(
+                "set_data: chapters/phrases/curve/thumbnails are not yet wired; "
+                "only waveform is rendered in v0"
+            )
+        if waveform is not None:
+            self._waveform_peaks = list(waveform)
+            self.update()
 
     def mark_pending(self, start_ms: int, end_ms: int) -> None:
         raise NotImplementedError
@@ -154,6 +163,9 @@ class TimelineWidget(QWidget):
             painter.drawLine(x, 0, x, height)
             tick += interval
 
+        if self._waveform_peaks:
+            self._paint_waveform(painter, width, height)
+
         painter.setPen(self._theme.text_muted)
         tick = 0
         while tick <= self._duration_ms:
@@ -166,3 +178,19 @@ class TimelineWidget(QWidget):
         painter.setPen(baton_pen)
         baton_x = int(self._position_ms / self._duration_ms * width)
         painter.drawLine(baton_x, 0, baton_x, height)
+
+    def _paint_waveform(self, painter: QPainter, width: int, height: int) -> None:
+        peak_count = len(self._waveform_peaks)
+        band_top = 18
+        band_h = max(20, int(height * 0.55))
+        center = band_top + band_h // 2
+        half_h = band_h // 2
+        painter.setPen(self._theme.waveform)
+        for col in range(width):
+            peak_idx = int(col / width * peak_count)
+            if peak_idx >= peak_count:
+                break
+            peak = self._waveform_peaks[peak_idx]
+            h = int(peak * half_h)
+            if h > 0:
+                painter.drawLine(col, center - h, col, center + h)
