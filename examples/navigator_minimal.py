@@ -1,19 +1,18 @@
-"""Minimal navigator-mode demo — forgeplayer-shape.
+"""Minimal navigator-mode demo — empty timeline + baton + precision time label.
 
-Shows: video panel + read-only timeline (movement staff + baton only),
-synced via BatonSync.
-
-Status: skeleton only. Will not run end-to-end until staves and
-VideoPanel are implemented.
+Drives the baton across a 10-minute fake duration with a QTimer so first
+launch shows real motion. VideoPanel and BatonSync are still stubs and
+intentionally not wired here yet.
 """
 
 from __future__ import annotations
 
 import sys
 
+from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget
 
-from forge_timeline import BatonSync, TimelineWidget, VideoPanel
+from forge_timeline import PrecisionTimeLabel, TimelineWidget
 
 
 def main() -> int:
@@ -21,20 +20,36 @@ def main() -> int:
 
     window = QMainWindow()
     window.setWindowTitle("forge-timeline navigator demo")
+
     central = QWidget()
     layout = QVBoxLayout(central)
+    layout.setContentsMargins(0, 0, 0, 0)
+    layout.setSpacing(0)
 
-    video = VideoPanel()
-    timeline = TimelineWidget(duration_ms=600_000, mode="navigator")
+    duration_ms = 600_000
+    timeline = TimelineWidget(duration_ms=duration_ms, mode="navigator")
+    time_label = PrecisionTimeLabel(ms=0)
+    time_label.setStyleSheet(
+        "padding: 6px; color: #dddddd; background: #222222; font-size: 14px;"
+    )
 
-    layout.addWidget(video, stretch=4)
     layout.addWidget(timeline, stretch=1)
+    layout.addWidget(time_label)
     window.setCentralWidget(central)
+    window.resize(1000, 240)
 
-    sync = BatonSync(timeline, video)
-    sync.sync()
+    position = {"ms": 0}
+    step_ms = 100
 
-    window.resize(960, 600)
+    def advance() -> None:
+        position["ms"] = (position["ms"] + step_ms) % duration_ms
+        timeline.set_position(position["ms"])
+        time_label.set_ms(position["ms"])
+
+    timer = QTimer()
+    timer.timeout.connect(advance)
+    timer.start(50)
+
     window.show()
     return app.exec()
 
