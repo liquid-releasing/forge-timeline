@@ -162,6 +162,33 @@ class VideoPanel(QWidget):
         except Exception:
             pass
 
+    def seek_relative(self, seconds: float) -> None:
+        """Jump forward (positive) or back (negative) by the given seconds."""
+        if self._mpv is None:
+            return
+        try:
+            self._mpv.seek(seconds, "relative", "exact")
+        except Exception:
+            pass
+
+    def frame_step_forward(self) -> None:
+        """Advance one frame and pause."""
+        if self._mpv is None:
+            return
+        try:
+            self._mpv.command("frame-step")
+        except Exception:
+            pass
+
+    def frame_step_back(self) -> None:
+        """Step back one frame and pause."""
+        if self._mpv is None:
+            return
+        try:
+            self._mpv.command("frame-back-step")
+        except Exception:
+            pass
+
     def position_ms(self) -> int:
         return self._last_position_ms
 

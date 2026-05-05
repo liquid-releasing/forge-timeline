@@ -74,3 +74,23 @@ def test_terminate_is_idempotent(qtbot) -> None:
     panel.terminate()
 
     assert panel._mpv is None
+
+
+def test_seek_relative_before_init_is_noop(qtbot) -> None:
+    from forge_timeline import VideoPanel
+
+    panel = VideoPanel()
+    qtbot.addWidget(panel)
+
+    panel.seek_relative(1.0)
+    panel.seek_relative(-5.0)
+
+
+def test_frame_step_before_init_is_noop(qtbot) -> None:
+    from forge_timeline import VideoPanel
+
+    panel = VideoPanel()
+    qtbot.addWidget(panel)
+
+    panel.frame_step_forward()
+    panel.frame_step_back()
