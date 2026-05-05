@@ -165,6 +165,73 @@ def test_set_data_unsupported_kwargs_raise(qtbot) -> None:
         widget.set_data(chapters=[{"start_ms": 0, "end_ms": 1000, "name": "x"}])
 
 
+def test_shift_click_right_emits_frame_step_forward(qtbot) -> None:
+    from PySide6.QtCore import QPoint, Qt
+
+    from forge_timeline import TimelineWidget
+
+    widget = TimelineWidget(duration_ms=1_000)
+    qtbot.addWidget(widget)
+    widget.resize(200, 80)
+    widget.show()
+    qtbot.waitExposed(widget)
+    widget.set_position(500)  # baton at midpoint
+
+    with qtbot.waitSignal(widget.frame_step_requested, timeout=1_000) as blocker:
+        qtbot.mouseClick(
+            widget,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.ShiftModifier,
+            pos=QPoint(180, 40),
+        )
+
+    assert blocker.args == [1]
+    assert widget.position_ms == 500  # not moved by shift+click
+
+
+def test_shift_click_left_emits_frame_step_back(qtbot) -> None:
+    from PySide6.QtCore import QPoint, Qt
+
+    from forge_timeline import TimelineWidget
+
+    widget = TimelineWidget(duration_ms=1_000)
+    qtbot.addWidget(widget)
+    widget.resize(200, 80)
+    widget.show()
+    qtbot.waitExposed(widget)
+    widget.set_position(500)
+
+    with qtbot.waitSignal(widget.frame_step_requested, timeout=1_000) as blocker:
+        qtbot.mouseClick(
+            widget,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.ShiftModifier,
+            pos=QPoint(20, 40),
+        )
+
+    assert blocker.args == [-1]
+    assert widget.position_ms == 500
+
+
+def test_plain_click_does_not_emit_frame_step(qtbot) -> None:
+    from PySide6.QtCore import QPoint, Qt
+
+    from forge_timeline import TimelineWidget
+
+    widget = TimelineWidget(duration_ms=1_000)
+    qtbot.addWidget(widget)
+    widget.resize(200, 80)
+    widget.show()
+    qtbot.waitExposed(widget)
+
+    received: list[int] = []
+    widget.frame_step_requested.connect(received.append)
+
+    qtbot.mouseClick(widget, Qt.MouseButton.LeftButton, pos=QPoint(100, 40))
+
+    assert received == []
+
+
 def test_paints_with_waveform_without_crashing(qtbot) -> None:
     import math
 

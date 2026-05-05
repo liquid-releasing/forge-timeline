@@ -36,6 +36,7 @@ class TimelineWidget(QWidget):
     range_selected = Signal(int, int)
     zoom_changed = Signal(float)
     pan_changed = Signal(int)
+    frame_step_requested = Signal(int)  # +1 forward, -1 back — emitted on Shift+click
 
     def __init__(
         self,
@@ -125,6 +126,16 @@ class TimelineWidget(QWidget):
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
             ms = self._x_to_ms(event.position().x())
+            if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
+                # Shift+click: jog one frame in the direction of the click
+                # relative to the current baton position. Acts as a shuttle
+                # control without leaving the timeline.
+                if ms > self._position_ms:
+                    self.frame_step_requested.emit(1)
+                elif ms < self._position_ms:
+                    self.frame_step_requested.emit(-1)
+                event.accept()
+                return
             self.set_position(ms)
             self.position_clicked.emit(ms)
             event.accept()
