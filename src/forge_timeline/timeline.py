@@ -53,7 +53,7 @@ class TimelineWidget(QWidget):
         self._position_ms = 0
         self._theme = theme or DEFAULT_THEME
         self._waveform_peaks: list[float] = []
-        self.setMinimumHeight(64)
+        self.setMinimumHeight(120)
 
     @property
     def mode(self) -> Mode:
@@ -193,7 +193,7 @@ class TimelineWidget(QWidget):
     def _paint_waveform(self, painter: QPainter, width: int, height: int) -> None:
         peak_count = len(self._waveform_peaks)
         band_top = 18
-        band_h = max(20, int(height * 0.55))
+        band_h = max(40, int(height * 0.75))
         center = band_top + band_h // 2
         half_h = band_h // 2
         painter.setPen(self._theme.waveform)
