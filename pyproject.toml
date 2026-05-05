@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "forge-timeline"
+version = "0.0.1"
+description = "PySide6 timeline-canvas widget library for the lqr forge apps. Provides TimelineWidget, VideoPanel, and BatonSync as coordinated primitives."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+    { name = "Liquid Releasing", email = "lqr@liquidreleasing.com" },
+]
+keywords = ["timeline", "pyside6", "qt", "video", "waveform", "funscript"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Video :: Display",
+    "Topic :: Software Development :: User Interfaces",
+]
+dependencies = [
+    "PySide6>=6.5.0",
+]
+
+[project.optional-dependencies]
+mpv = ["python-mpv>=1.0"]
+dev = ["pytest>=8", "pytest-qt>=4.4", "ruff>=0.4"]
+
+[project.urls]
+Homepage = "https://github.com/liquid-releasing/forge-timeline"
+Repository = "https://github.com/liquid-releasing/forge-timeline"
+Issues = "https://github.com/liquid-releasing/forge-timeline/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/forge_timeline"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
