@@ -66,11 +66,28 @@ pip install -e ".[mpv,dev]"
 `PySide6` is a hard dep. `python-mpv` is optional (only needed for
 `VideoPanel`). `pytest-qt` is for the test suite.
 
+### libmpv-2.dll — required for VideoPanel only
+
+`VideoPanel` lazily imports `mpv` and loads `libmpv-2.dll` on first
+`showEvent`. The rest of the package (`TimelineWidget`,
+`PrecisionTimeLabel`, etc.) imports cleanly without it.
+
+On Windows, drop `libmpv-2.dll` next to the venv's `python.exe` — i.e.
+`.venv/Scripts/libmpv-2.dll`. `VideoPanel` adds that directory to the
+DLL search on first use, so direct-execution `python.exe` works
+identically to a `venv\Scripts\activate` shell. The forgeplayer repo
+includes a working copy:
+
+```bash
+copy ..\forgeplayer\libmpv-2.dll .venv\Scripts\
+```
+
 ## Examples
 
 ```bash
-python examples/navigator_minimal.py    # forgeplayer-shape demo
-python examples/canvas_full.py           # FunscriptForge / beatflo-shape demo
+python examples/navigator_minimal.py    # forgeplayer-shape demo (no video)
+python examples/canvas_full.py           # FunscriptForge / beatflo-shape (no video)
+python examples/video_demo.py            # full stack — video panel + timeline + time label
 ```
 
 ## Repo layout

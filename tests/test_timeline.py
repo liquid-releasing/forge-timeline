@@ -84,6 +84,53 @@ def test_pick_tick_interval_picks_smaller_for_short_duration() -> None:
     assert _pick_tick_interval(ms_per_pixel=10_000.0) == 1_800_000
 
 
+def test_set_duration_updates_property(qtbot) -> None:
+    from forge_timeline import TimelineWidget
+
+    widget = TimelineWidget(duration_ms=60_000)
+    qtbot.addWidget(widget)
+
+    widget.set_duration(120_000)
+
+    assert widget.duration_ms == 120_000
+
+
+def test_set_duration_clamps_position_when_shrinking(qtbot) -> None:
+    from forge_timeline import TimelineWidget
+
+    widget = TimelineWidget(duration_ms=60_000)
+    qtbot.addWidget(widget)
+
+    widget.set_position(50_000)
+    widget.set_duration(30_000)
+
+    assert widget.duration_ms == 30_000
+    assert widget.position_ms == 30_000
+
+
+def test_set_duration_keeps_position_when_growing(qtbot) -> None:
+    from forge_timeline import TimelineWidget
+
+    widget = TimelineWidget(duration_ms=60_000)
+    qtbot.addWidget(widget)
+
+    widget.set_position(30_000)
+    widget.set_duration(120_000)
+
+    assert widget.duration_ms == 120_000
+    assert widget.position_ms == 30_000
+
+
+def test_set_duration_zero_rejected(qtbot) -> None:
+    from forge_timeline import TimelineWidget
+
+    widget = TimelineWidget(duration_ms=60_000)
+    qtbot.addWidget(widget)
+
+    with pytest.raises(ValueError):
+        widget.set_duration(0)
+
+
 def test_left_click_emits_and_updates_position(qtbot) -> None:
     """Left-click anywhere fires position_clicked and updates position_ms in lockstep.
 

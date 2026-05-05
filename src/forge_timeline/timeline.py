@@ -74,6 +74,16 @@ class TimelineWidget(QWidget):
             self._position_ms = ms
             self.update()
 
+    def set_duration(self, ms: int) -> None:
+        if ms <= 0:
+            raise ValueError(f"duration_ms must be positive, got {ms}")
+        if self._duration_ms == ms:
+            return
+        self._duration_ms = ms
+        if self._position_ms > ms:
+            self._position_ms = ms
+        self.update()
+
     def set_zoom(self, factor: float, center_ms: int | None = None) -> None:
         raise NotImplementedError
 
